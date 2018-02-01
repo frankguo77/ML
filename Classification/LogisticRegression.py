@@ -21,14 +21,14 @@ def read_data(train_data_path, train_label_path, test_data_path):
 
 
 def sigmoid(z):
-    print('z=', z)
-    res = 1 / (1.0 + np.exp(-z))
+    res = (1 / (1.0 + np.exp(-z)))
     return np.clip(res, 1 * math.e ** -8, 1 - (1 * math.e ** -8))
 
 
 def normalize(X):
     mean = sum(X) / X.shape[0]
     sigma = np.std(X, axis=0)
+
     mean = np.tile(mean, (X.shape[0], 1))
     sigma = np.tile(sigma, (X.shape[0], 1))
     X = (X - mean) / sigma
@@ -75,36 +75,41 @@ def train():
                         r'E:/郭志/ML/Classification/Data/X_test.csv')
     X = normalize(X)
     Y = Y.flatten()
+
+    all_data_size = len(X)
+    valid_data_size = int(math.floor(all_data_size * 0.50))
+
+    X, Y = shuffle(X, Y)
+
+    X_train, Y_train = X[0:valid_data_size], Y[0:valid_data_size]
+    X_valid, Y_valid = X[valid_data_size:], Y[valid_data_size:]
+
     batch_size = 32
-    train_data_size = len(X)
+    train_data_size = len(X_train)
     step_num = int(math.floor(train_data_size / batch_size))
-    epoch_num = 1
+    epoch_num = 100
     save_param_iter = 50
 
-    Theta = np.zeros(X.shape[1] + 1)  # 用0 + 0*x1 + 0*x2當作初始設定
+    Theta = np.zeros(X_train.shape[1] + 1)  # 用0 + 0*x1 + 0*x2當作初始設定
+    save_dir = r'D:\test\logisticresult.txt'
     for epoch in range(1, epoch_num):
         # Do validation and parameter saving
         if (epoch) % save_param_iter == 0:
             print('=====Saving Param at epoch %d=====' % epoch)
-            '''
             if not os.path.exists(save_dir):
                 os.mkdir(save_dir)
             np.savetxt(os.path.join(save_dir, 'w'), w)
             np.savetxt(os.path.join(save_dir, 'b'), [b,])
             print('epoch avg loss = %f' % (total_loss / (float(save_param_iter) * train_data_size)))
             total_loss = 0.0
-            '''
             valid(Theta, X_valid, Y_valid)
-        # Random shuffle
-
-    X, Y = shuffle(X, Y)
 
     # Train with batch
-    for idx in range(step_num):
-        X_batch = X[idx * batch_size:(idx + 1) * batch_size]
-        Y_batch = Y[idx * batch_size:(idx + 1) * batch_size]
-        X_batch = np.concatenate((np.ones((X_batch.shape[0], 1)), X_batch), axis=1)
-        Theta = logistic_regression(X_batch, Y_batch, Theta)
+        for idx in range(step_num):
+            X_batch = X_train[idx * batch_size:(idx + 1) * batch_size]
+            Y_batch = Y_train[idx * batch_size:(idx + 1) * batch_size]
+            X_batch = np.concatenate((np.ones((X_batch.shape[0], 1)), X_batch), axis=1)
+            Theta = logistic_regression(X_batch, Y_batch, Theta)
 
 
     return
